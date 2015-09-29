@@ -17,6 +17,7 @@
 		E51AA2A81BBA0A12000A85FA /* NJIT_EventsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51AA2A71BBA0A12000A85FA /* NJIT_EventsTests.swift */; };
 		E51AA2B31BBA0A12000A85FA /* NJIT_EventsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E51AA2B21BBA0A12000A85FA /* NJIT_EventsUITests.swift */; };
 		E560161D1BBA0D79008CEC25 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E560161C1BBA0D79008CEC25 /* API.swift */; settings = {ASSET_TAGS = (); }; };
+		E560161F1BBA31EA008CEC25 /* Standards.swift in Sources */ = {isa = PBXBuildFile; fileRef = E560161E1BBA31EA008CEC25 /* Standards.swift */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,6 +56,7 @@
 		E51AA2B21BBA0A12000A85FA /* NJIT_EventsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NJIT_EventsUITests.swift; sourceTree = "<group>"; };
 		E51AA2B41BBA0A12000A85FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E560161C1BBA0D79008CEC25 /* API.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		E560161E1BBA31EA008CEC25 /* Standards.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Standards.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -127,6 +129,7 @@
 			children = (
 				E51AA28F1BBA0A11000A85FA /* AppDelegate.swift */,
 				E51AA2911BBA0A11000A85FA /* ViewController.swift */,
+				E560161E1BBA31EA008CEC25 /* Standards.swift */,
 				E560161C1BBA0D79008CEC25 /* API.swift */,
 				E51AA2931BBA0A11000A85FA /* Main.storyboard */,
 				E51AA2991BBA0A11000A85FA /* Assets.xcassets */,
@@ -339,6 +342,7 @@
 				E51AA2921BBA0A11000A85FA /* ViewController.swift in Sources */,
 				E51AA2981BBA0A11000A85FA /* NJIT_Events.xcdatamodeld in Sources */,
 				E560161D1BBA0D79008CEC25 /* API.swift in Sources */,
+				E560161F1BBA31EA008CEC25 /* Standards.swift in Sources */,
 				E51AA2901BBA0A11000A85FA /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
