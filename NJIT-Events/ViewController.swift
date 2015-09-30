@@ -6,83 +6,155 @@
 //  Copyright © 2015 JRav. All rights reserved.
 //
 
+/*
+ *  Import statements.
+ */
+
 import UIKit
 import SwiftyJSON
 
+/*
+ * Create new UIViewController with TableView Delegate and Data Source
+ */
 class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
+    /*
+     *  Instantiate variables for tableView and JSON Data from API call.
+     */
+    
     var tableView : UITableView!
     var data : JSON!
-    
-    let date : NSDateComponents = NSDateComponents()
-    
+    var refreshControl : UIRefreshControl!
+    var api : API!
+    var toolbarLabel : UILabel!
+    var date : NSDate!
+
+    /*
+     * viewDidLoad()
+     */
     override func viewDidLoad() {
+        // super
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
         
+        // initialize self variables
+        // title, textAttributes, backgroundColor, barTintColor
         self.title = "Events at NJIT"
         self.navigationController?.navigationBar.titleTextAttributes = [NSFontAttributeName: UIFont(name: "AppleSDGothicNeo-Bold", size: 24)!, NSForegroundColorAttributeName: UIColor.whiteColor()]
         self.view.backgroundColor = UIColor.whiteColor()
         self.navigationController?.navigationBar.barTintColor = UIColor.redColor()
+        self.navigationController?.setToolbarHidden(false, animated: true)
         
-        let searchButton : UIBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.Search, target: self, action: "searchEvents:")
+        // create search button
+        let searchButton : UIBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.Action, target: self, action: "aboutUs:")
         searchButton.tintColor = UIColor.whiteColor()
         self.navigationItem.rightBarButtonItem = searchButton
         
+        // create tableView
         tableView = UITableView(frame: self.view.frame)
-        
         tableView.dataSource = self
         tableView.delegate = self
-        
         tableView.registerClass(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        
         tableView.alpha = 0
-        
         self.view.addSubview(self.tableView)
         
-        let api : API = API()
+        // refreshControl
+        self.refreshControl = UIRefreshControl()
+        self.refreshControl.attributedTitle = NSAttributedString(string: "Refreshing...")
+        self.refreshControl.addTarget(self, action: "refreshData:", forControlEvents: UIControlEvents.ValueChanged)
+        self.tableView.addSubview(refreshControl)
+        
+        // create flexSpace button
+        let flexibleSpace : UIBarButtonItem = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.FlexibleSpace, target: self, action: nil)
+        
+        // create toolbarLabel for "last updated"
+        self.toolbarLabel = UILabel(frame: CGRect(x: 0, y: 0, width: screenWidth, height: 50))
+        self.toolbarLabel.text = "Updating..."
+        self.toolbarLabel.font = UIFont(name: "ArialMT", size: 12)
+        self.toolbarLabel.textAlignment = NSTextAlignment.Center
+        self.toolbarItems = [flexibleSpace, UIBarButtonItem(customView: self.toolbarLabel), flexibleSpace]
+        
+        
+        
+        // make API call, return data and reload tableView.
+        api = API()
         api.getData { (swiftyJSON) -> Void in
             self.data = swiftyJSON
+            self.toolbarLabel.text = self.getCurrentTime()
             self.tableView.reloadData()
             self.tableView.alpha = 1
         }
         
     }
 
+    /*
+     * didReceiveMemoryWarning()
+     */
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 
+    /*
+     * preferredStatusBarStyle()
+     */
     override func preferredStatusBarStyle() -> UIStatusBarStyle {
         return UIStatusBarStyle.LightContent
     }
     
+    /*
+     * cellForRowAtIndexPath
+     */
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         
+        // create cell
         var cell : UITableViewCell = tableView.dequeueReusableCellWithIdentifier("cell")!
         cell = UITableViewCell(style: UITableViewCellStyle.Subtitle, reuseIdentifier: "cell")
         
+        // if the data exists
         if let data = self.data {
+            
+            // set textLabel text and font
             cell.textLabel?.text = data["response"][indexPath.row][0]["event_name"].stringValue.stringByRemovingPercentEncoding
             cell.textLabel?.font = UIFont(name: "AppleSDGothicNeo-Light", size: 20)
             
-            cell.detailTextLabel?.text = eventDate(data["response"][indexPath.row][0]["month"].stringValue, date: data["response"][indexPath.row][0]["date"].stringValue, year: data["response"][indexPath.row][0]["year"].stringValue) + ", " + timeSinceMidnight(data["response"][indexPath.row][0]["start"].doubleValue) + " - " + timeSinceMidnight(data["response"][indexPath.row][0]["end"].doubleValue)
+            // set detailedTextLabel text and fonts
+            cell.detailTextLabel?.numberOfLines = 2
+            let locationName : String = data["response"][indexPath.row][0]["location_name"].stringValue
             
-            cell.detailTextLabel?.font = UIFont(name: "AppleSDGothicNeo-Light", size: 14)
+            cell.detailTextLabel?.text = "\(locationName)\n" + eventDate(data["response"][indexPath.row][0]["month"].stringValue, date: data["response"][indexPath.row][0]["date"].stringValue, year: data["response"][indexPath.row][0]["year"].stringValue) + ", " + timeSinceMidnight(data["response"][indexPath.row][0]["start"].doubleValue) + " - " + timeSinceMidnight(data["response"][indexPath.row][0]["end"].doubleValue)
+            cell.detailTextLabel?.font = UIFont(name: "AppleSDGothicNeo-Light", size: 12)
+            
+            if isCurrentlyHappening(indexPath.row) {
+                cell.backgroundColor = UIColor(red: 102.0/255.0, green: 204.0/255.0, blue: 153.0/255.0, alpha: 1.0/1.0)
+            }
+            
+            if isPastEvent(indexPath.row) {
+                cell.contentView.alpha = 0.25
+            }
             
         }
         
+        // return cell
         return cell
+        
     }
     
+    /*
+     * didSelectRowAtIndexPath
+     */
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
         
+        // deselect row upon selection
         tableView.deselectRowAtIndexPath(indexPath, animated: true)
         
     }
     
+    /*
+     * numberOfRowsInSection
+     */
     func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        
+        // if the data is available, set the number of rows equal to the number of events
+        // else, set it equal to 1
         if let data = self.data {
             return data["response"].count
         } else {
@@ -90,19 +162,34 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         }
     }
     
+    /*
+     * heightForRowAtIndexPath
+     */
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat {
-        return 75
+        return 70
     }
 
+    /*
+     * upvoteButton(sender: UIButton!)
+     * For future use, will be used for event goers to increment events they're at.
+     */
     func upvoteButton(sender: UIButton!) {
         print(sender.tag)
     }
     
+    /*
+     * eventDate(month : String, date : String, year : String) -> String
+     * Converts the month, date and year into a string for the tableView
+     */
     func eventDate(month : String, date : String, year : String) -> String {
         
         return "\(month)/\(date)/\(year)"
     }
     
+    /*
+     * timeSinceMidnight( minutes : Double) -> String
+     * Converts the number of minutes since midnight to a time string.
+     */
     func timeSinceMidnight(minutes : Double) -> String {
         
         var period = "AM"
@@ -125,8 +212,86 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
     }
     
+    /*
+     * searchEvents(sender: UIButton!)
+     * Will be used for the search bar later on.
+     */
     func searchEvents(sender: UIButton!) {
         
+    }
+    
+    /*
+     * aboutUs(sender: UIButton!)
+     * Shows the user a UIViewController
+     */
+    func aboutUs(sender: UIButton!) {
+        print("About Us")
+    }
+    
+    
+    func refreshData(sender: UIRefreshControl!) {
+        self.api.getData { (swiftyJSON) -> Void in
+            self.data = swiftyJSON
+            self.tableView.reloadData()
+            self.refreshControl.endRefreshing()
+            self.toolbarLabel.text = self.getCurrentTime()
+        }
+    }
+    
+    func getCurrentTime() -> String {
+        var hourMinutes = getTimeComponents()
+        var period = "AM"
+        
+        if hourMinutes[0] > 12 {
+            hourMinutes[0] = hourMinutes[0] - 12
+            period = "PM"
+        }
+        
+        var hourMinutesString : [String] = [String(hourMinutes[0]), String(hourMinutes[1])]
+        
+        if hourMinutesString[1].characters.count == 1 {
+            hourMinutesString[1] = "0" + hourMinutesString[1]
+        }
+        
+        return "Last Updated: \(hourMinutesString[0]):\(hourMinutesString[1]) \(period)"
+    }
+    
+    func isCurrentlyHappening(index : Int) -> Bool {
+        let hourMinutes = getTimeComponents()
+        
+        let totalMinutes = hourMinutes[0] * 60 + hourMinutes[1]
+        let startTime = Int(data["response"][index][0]["start"].doubleValue)
+        let endTime = Int(data["response"][index][0]["end"].doubleValue)
+        let eventDate = Int(data["response"][index][0]["date"].doubleValue)
+        
+        if(totalMinutes > startTime && totalMinutes < endTime && hourMinutes[2] == eventDate) {
+            return true
+        }
+        else {
+            return false
+        }
+    }
+    
+    func getTimeComponents() -> [Int] {
+        let date = NSDate()
+        let calendar = NSCalendar.currentCalendar()
+        let components = calendar.components([.Hour, .Minute, .Day], fromDate: date)
+        let hour = components.hour
+        let minutes = components.minute
+        let day = components.day
+        
+        return [hour, minutes, day]
+    }
+    
+    func isPastEvent(index : Int) -> Bool {
+        let hourMinutes = getTimeComponents()
+        
+        if data["response"][index][0]["end"].doubleValue < Double(hourMinutes[0] * 60 + hourMinutes[1]) && Double(hourMinutes[2]) == data["response"][index][0]["date"].doubleValue {
+            return true
+        }
+        else {
+            return false
+        }
     }
     
 }
