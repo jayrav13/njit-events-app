@@ -12,6 +12,8 @@
 
 import UIKit
 import SwiftyJSON
+import Social
+import EventKit
 
 /*
  * Create new UIViewController with TableView Delegate and Data Source
@@ -92,13 +94,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
-
-    /*
-     * preferredStatusBarStyle()
-     */
-    override func preferredStatusBarStyle() -> UIStatusBarStyle {
-        return UIStatusBarStyle.LightContent
-    }
     
     /*
      * cellForRowAtIndexPath
@@ -145,6 +140,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         // deselect row upon selection
         tableView.deselectRowAtIndexPath(indexPath, animated: true)
+        self.openActionSheet(indexPath.row)
         
     }
     
@@ -292,6 +288,56 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         else {
             return false
         }
+    }
+    
+    func tweetThisEvent(index : Int) {
+        if SLComposeViewController.isAvailableForServiceType(SLServiceTypeTwitter) {
+            let tweetSheet = SLComposeViewController(forServiceType: SLServiceTypeTwitter)
+            tweetSheet.setInitialText("Going to an upcoming event at @NJIT, " + data["response"][index][0]["event_name"].stringValue + ", happening at " + data["response"][index][0]["location_name"].stringValue + "! via @EventsAtNJIT")
+            self.presentViewController(tweetSheet, animated: true, completion: { () -> Void in
+                
+            })
+        }
+    }
+    
+    func addEventToCalendar(index : Int) {
+        
+        let eventStore = EKEventStore()
+        eventStore.requestAccessToEntityType(EKEntityType.Event) { (granted: Bool, error : NSError?) -> Void in
+            if granted {
+                
+            }
+            else {
+                
+            }
+        }
+        
+    }
+    
+    func openActionSheet(index : Int) {
+        let menu : UIAlertController = UIAlertController(title: "Menu", message: "Choose Options", preferredStyle: UIAlertControllerStyle.ActionSheet)
+        
+        let tweetEvent : UIAlertAction = UIAlertAction(title: "Tweet the Event", style: UIAlertActionStyle.Default) { (action : UIAlertAction) -> Void in
+            self.tweetThisEvent(index)
+        }
+        menu.addAction(tweetEvent)
+    
+        /*let addToCalendar : UIAlertAction = UIAlertAction(title: "Add to Calendar", style: UIAlertActionStyle.Default) { (action : UIAlertAction) -> Void in
+            self.addEventToCalendar(index)
+        }
+        menu.addAction(addToCalendar)*/
+        
+        let cancel : UIAlertAction = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel) { (action : UIAlertAction) -> Void in
+            self.dismissViewControllerAnimated(true, completion: { () -> Void in
+                
+            })
+        }
+        menu.addAction(cancel)
+        
+        self.presentViewController(menu, animated: true) { () -> Void in
+            
+        }
+        
     }
     
 }
