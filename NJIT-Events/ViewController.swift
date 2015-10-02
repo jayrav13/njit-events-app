@@ -14,11 +14,12 @@ import UIKit
 import SwiftyJSON
 import Social
 import EventKit
+import MessageUI
 
 /*
  * Create new UIViewController with TableView Delegate and Data Source
  */
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, MFMailComposeViewControllerDelegate, UITextFieldDelegate, UITextViewDelegate {
 
     /*
      *  Instantiate variables for tableView and JSON Data from API call.
@@ -74,8 +75,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         self.toolbarLabel.font = UIFont(name: "ArialMT", size: 12)
         self.toolbarLabel.textAlignment = NSTextAlignment.Center
         self.toolbarItems = [flexibleSpace, UIBarButtonItem(customView: self.toolbarLabel), flexibleSpace]
-        
-        
         
         // make API call, return data and reload tableView.
         api = API()
@@ -221,7 +220,23 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
      * Shows the user a UIViewController
      */
     func aboutUs(sender: UIButton!) {
-        print("About Us")
+
+        let alert : UIAlertController = UIAlertController(title: "About Us", message: "This app is currently in beta testing. It is not affiliated with NJIT. If you have any questions, please click \"Mail\" below to email us!", preferredStyle: UIAlertControllerStyle.Alert)
+        
+        let cancelButton : UIAlertAction = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel) { (action : UIAlertAction) -> Void in
+            
+        }
+        alert.addAction(cancelButton)
+        
+        let mailButton : UIAlertAction = UIAlertAction(title: "Mail", style: UIAlertActionStyle.Default) { (action : UIAlertAction) -> Void in
+            self.sendEmailToAdmin()
+        }
+        alert.addAction(mailButton)
+        
+        self.presentViewController(alert, animated: true) { () -> Void in
+            
+        }
+        
     }
     
     
@@ -260,7 +275,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let endTime = Int(data["response"][index][0]["end"].doubleValue)
         let eventDate = Int(data["response"][index][0]["date"].doubleValue)
         
-        if(totalMinutes > startTime && totalMinutes < endTime && hourMinutes[2] == eventDate) {
+        if(totalMinutes >= startTime && totalMinutes < endTime && hourMinutes[2] == eventDate) {
             return true
         }
         else {
@@ -293,7 +308,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     func tweetThisEvent(index : Int) {
         if SLComposeViewController.isAvailableForServiceType(SLServiceTypeTwitter) {
             let tweetSheet = SLComposeViewController(forServiceType: SLServiceTypeTwitter)
-            tweetSheet.setInitialText("Going to an upcoming event at @NJIT, " + data["response"][index][0]["event_name"].stringValue + ", happening at " + data["response"][index][0]["location_name"].stringValue + "! via @EventsAtNJIT")
+            tweetSheet.setInitialText(data["response"][index][0]["event_name"].stringValue + " starts at " + timeSinceMidnight(data["response"][index][0]["start"].doubleValue) + ", taking place in " + data["response"][index][0]["location_name"].stringValue + ". Meet me there! via @EventsAtNJIT")
             self.presentViewController(tweetSheet, animated: true, completion: { () -> Void in
                 
             })
@@ -338,6 +353,24 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             
         }
         
+    }
+    
+    func sendEmailToAdmin() {
+        let picker : MFMailComposeViewController = MFMailComposeViewController()
+        picker.mailComposeDelegate = self
+        picker.setSubject("Hi there!")
+        picker.setMessageBody("I think your app is awesome! :)", isHTML: true)
+        picker.setToRecipients(["njit.events.app@gmail.com"])
+        
+        self.presentViewController(picker, animated: true) { () -> Void in
+            
+        }
+    }
+    
+    func mailComposeController(controller: MFMailComposeViewController, didFinishWithResult result: MFMailComposeResult, error: NSError?) {
+        self.dismissViewControllerAnimated(true) { () -> Void in
+            
+        }
     }
     
 }
