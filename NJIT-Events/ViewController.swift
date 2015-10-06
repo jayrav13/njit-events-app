@@ -15,11 +15,12 @@ import SwiftyJSON
 import Social
 import EventKit
 import MessageUI
+import CNPPopupController
 
 /*
  * Create new UIViewController with TableView Delegate and Data Source
  */
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, MFMailComposeViewControllerDelegate, UITextFieldDelegate, UITextViewDelegate {
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, MFMailComposeViewControllerDelegate, UITextFieldDelegate, UITextViewDelegate, CNPPopupControllerDelegate {
 
     /*
      *  Instantiate variables for tableView and JSON Data from API call.
@@ -32,7 +33,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var toolbarLabel : UILabel!
     var date : NSDate!
     var activityIndicator : UIActivityIndicatorView!
-
+    
     /*
      * viewDidLoad()
      */
@@ -383,6 +384,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             
         }
     }
+    
+    
     
 }
 
