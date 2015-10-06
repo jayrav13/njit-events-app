@@ -31,6 +31,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var api : API!
     var toolbarLabel : UILabel!
     var date : NSDate!
+    var activityIndicator : UIActivityIndicatorView!
 
     /*
      * viewDidLoad()
@@ -76,6 +77,14 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         self.toolbarLabel.textAlignment = NSTextAlignment.Center
         self.toolbarItems = [flexibleSpace, UIBarButtonItem(customView: self.toolbarLabel), flexibleSpace]
         
+        // activityIndicator
+        activityIndicator = UIActivityIndicatorView(frame: CGRect(x: screenWidth/2 - 10, y: screenHeight/2 - 10, width: 20, height: 20))
+        activityIndicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyle.WhiteLarge
+        activityIndicator.color = UIColor.blackColor()
+        activityIndicator.startAnimating()
+        activityIndicator.alpha = 1
+        self.view.addSubview(activityIndicator)
+        
         // make API call, return data and reload tableView.
         api = API()
         api.getData { (swiftyJSON) -> Void in
@@ -83,6 +92,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             self.toolbarLabel.text = self.getCurrentTime()
             self.tableView.reloadData()
             self.tableView.alpha = 1
+            self.activityIndicator.stopAnimating()
+            self.activityIndicator.alpha = 0
         }
         
     }
