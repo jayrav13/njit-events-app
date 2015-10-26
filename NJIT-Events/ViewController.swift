@@ -233,17 +233,17 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
      */
     func aboutUs(sender: UIButton!) {
 
-        let alert : UIAlertController = UIAlertController(title: "About Us", message: "This app is currently in beta testing. It is not affiliated with NJIT. If you have any questions, please click \"Mail\" below to email us!", preferredStyle: UIAlertControllerStyle.Alert)
+        let alert : UIAlertController = UIAlertController(title: "About Us", message: "This app is not affiliated with NJIT. If you have any questions, email us at njit.events.app@gmail.com!", preferredStyle: UIAlertControllerStyle.Alert)
         
         let cancelButton : UIAlertAction = UIAlertAction(title: "Cancel", style: UIAlertActionStyle.Cancel) { (action : UIAlertAction) -> Void in
             
         }
         alert.addAction(cancelButton)
         
-        let mailButton : UIAlertAction = UIAlertAction(title: "Mail", style: UIAlertActionStyle.Default) { (action : UIAlertAction) -> Void in
+        /*let mailButton : UIAlertAction = UIAlertAction(title: "Mail", style: UIAlertActionStyle.Default) { (action : UIAlertAction) -> Void in
             self.sendEmailToAdmin()
         }
-        alert.addAction(mailButton)
+        alert.addAction(mailButton)*/
         
         self.presentViewController(alert, animated: true) { () -> Void in
             
