@@ -31,6 +31,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var api : API!
     var data : JSON!
     var popupController : CNPPopupController!
+    var infoPopupController : CNPPopupController!
+    var infoBarButton : UIBarButtonItem!
     
     // fonts
     var appleFontBold : UIFont!
@@ -50,6 +52,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         appleFontLight = UIFont(name: "AppleSDGothicNeo-Light", size: 24)
         arialFontSmall = UIFont(name: "ArialMT", size: 12)
         arialFontLarge = UIFont(name: "ArialMT", size: 16)
+        
+        infoBarButton = UIBarButtonItem(title: "Info", style: UIBarButtonItemStyle.Plain, target: self, action: "infoButton:")
+        infoBarButton.setTitleTextAttributes([
+            NSForegroundColorAttributeName : UIColor.whiteColor()
+            ], forState: UIControlState.Normal)
+        self.navigationItem.leftBarButtonItem = infoBarButton
         
         // initialize self variables
         // title, textAttributes, backgroundColor, barTintColor
@@ -92,14 +100,24 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         self.view.addSubview(activityIndicator)
 
         // make API call, return data and reload tableView.
+        // error handling for no data returned.
         api = API()
-        api.getData { (swiftyJSON) -> Void in
+        api.getData { (success, swiftyJSON) -> Void in
             self.data = swiftyJSON
-            self.toolbarLabel.text = self.lastUpdated(self.data["current_date"].stringValue, timeString: self.data["current_time"].stringValue)
+            
             self.tableView.reloadData()
             self.tableView.alpha = 1
             self.activityIndicator.stopAnimating()
             self.activityIndicator.alpha = 0
+            
+            if (success == false || swiftyJSON["response"].count == 0) {
+                self.toolbarLabel.text = "No data retrieved."
+                self.showNetworkErrorMessage()
+            }
+            else {
+                self.toolbarLabel.text = self.lastUpdated(self.data["current_date"].stringValue, timeString: self.data["current_time"].stringValue)
+            }
+            
         }
         
     }
@@ -109,6 +127,20 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
      */
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+    }
+    
+    /*
+     *  infoButton()
+     *  Displays info about the app in a CNPPopupController.
+     */
+    func infoButton(sender : UIButton!) {
+        let title : UILabel = generatePopupLabel("Events at NJIT", font: arialFontLarge.fontWithSize(24))
+        let description : UILabel = generatePopupLabel("Thanks for using Events at NJIT! If you have suggestions, please reach out at njit.events.app@gmail.com or tweet us at @EventsAtNJIT.", font: arialFontSmall.fontWithSize(16), lines: 0, align : NSTextAlignment.Center)
+        let logo : UIImageView = UIImageView(image: resizeImage(UIImage(named: "logo")!, newSize: CGSize(width: 100, height: 100)))
+        let by : UILabel = generatePopupLabel("By Jay Ravaliya / @jayrav13", font: arialFontSmall.fontWithSize(16))
+        infoPopupController = CNPPopupController(contents: [title, description, logo, by])
+        infoPopupController.theme.popupStyle = CNPPopupStyle.ActionSheet
+        infoPopupController.presentPopupControllerAnimated(true)
     }
     
     /*
@@ -127,15 +159,42 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             cell.textLabel?.text = data["response"][indexPath.row]["name"].stringValue
             cell.textLabel?.font = appleFontLight
             
-            if data["response"][indexPath.row]["datetime"]["currently_happening"].boolValue {
-                cell.backgroundColor = UIColor(red: 102.0/255.0, green: 204.0/255.0, blue: 153.0/255.0, alpha: 1.0/1.0)
+            // alter detailed text based on when the event is taking place.
+            cell.detailTextLabel!.text = ""
+            
+            if (self.data["response"][indexPath.row]["datetime"]["currently_happening"].boolValue) {
+                
+                cell.detailTextLabel!.text = "[Happening Now] "
+                cell.imageView?.image = resizeImage(UIImage(named: "checkmark")!, newSize: CGSize(width: 20.0, height: 20.0))
+                
+            }
+            else {
+                if (self.data["response"][indexPath.row]["datetime"]["is_today"].boolValue) {
+                    cell.detailTextLabel!.text = "Today, "
+                }
+                else if (self.data["response"][indexPath.row]["datetime"]["is_tomorrow"].boolValue) {
+                    cell.detailTextLabel!.text = "Tomorrow, "
+                }
+                else {
+                    
+                }
             }
             
+            if (self.data["response"][indexPath.row]["datetime"]["multiday"].boolValue) {
+                cell.detailTextLabel!.text = self.data["response"][indexPath.row]["datetime"]["time_date_range_string"].stringValue
+            }
+            else {
+                if cell.detailTextLabel!.text?.characters.count == 0 {
+                    cell.detailTextLabel!.text = self.data["response"][indexPath.row]["datetime"]["start"]["common_formats"]["date"].stringValue + ", "
+                }
+                
+                cell.detailTextLabel!.text = cell.detailTextLabel!.text! + self.data["response"][indexPath.row]["datetime"]["time_range_string"].stringValue
+                
+            }
         }
         
         // return cell
         return cell
-        
     }
     
     /*
@@ -166,7 +225,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         if let data = self.data {
             return data["response"].count
         } else {
-            return 1
+            return 0
         }
     }
     
@@ -182,20 +241,27 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
      *  Updates information on pull down.
      */
     func refreshData(sender: UIRefreshControl!) {
-        self.api.getData { (swiftyJSON) -> Void in
+        self.api.getData { (success, swiftyJSON) -> Void in
             self.data = swiftyJSON
             self.tableView.reloadData()
             self.refreshControl.endRefreshing()
-            self.toolbarLabel.text = self.lastUpdated(self.data["current_date"].stringValue, timeString: self.data["current_time"].stringValue)
+            
+            if (success == false || swiftyJSON["response"].count == 0) {
+                self.toolbarLabel.text = "No data retrieved."
+                self.showNetworkErrorMessage()
+            }
+            else {
+                self.toolbarLabel.text = self.lastUpdated(self.data["current_date"].stringValue, timeString: self.data["current_time"].stringValue)
+            }
         }
     }
     
     /*
      *  lastUpdated
-     *  Returns a standard "Last Updated on %s at %s" string for the footer.
+     *  Returns a standard "Updated at %s" string for the footer.
      */
     func lastUpdated(dateString : String, timeString : String) -> String {
-        return "Last Updated on " + dateString + " at " + timeString
+        return "Updated at " + timeString
     }
 
     /*
@@ -206,11 +272,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         
         // an array for all the elements
         var elements : [AnyObject] = []
-        
-        // set up paragraph style
-        let paragraphStyle : NSMutableParagraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineBreakMode = NSLineBreakMode.ByWordWrapping
-        paragraphStyle.alignment = NSTextAlignment.Center
         
         // title label will ALWAYS exist
         let titleLabel : UILabel = generatePopupLabel(self.data["response"][index]["name"].stringValue, font: appleFontBold)
@@ -329,19 +390,50 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
      *  generatePopupLabel
      *  Specific function that returns a UILabel for each element in the CNPPopupController.
      */
-    func generatePopupLabel(val : String, font : UIFont) -> UILabel {
+    func generatePopupLabel(val : String, font : UIFont, lines : Int = 3, align : NSTextAlignment = NSTextAlignment.Center) -> UILabel {
         let paragraphStyle : NSMutableParagraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineBreakMode = NSLineBreakMode.ByWordWrapping
-        paragraphStyle.alignment = NSTextAlignment.Center
+        paragraphStyle.alignment = align
         
-        let title : NSAttributedString = NSAttributedString(string: val, attributes: [NSFontAttributeName : font, NSParagraphStyleAttributeName : paragraphStyle])
+        let title : NSAttributedString = NSAttributedString(string: val, attributes: [
+            NSFontAttributeName : font,
+            NSParagraphStyleAttributeName : paragraphStyle,
+            NSDocumentTypeDocumentAttribute : NSHTMLTextDocumentType,
+            NSCharacterEncodingDocumentAttribute : NSUTF8StringEncoding,
+        ])
         
         let titleLabel : UILabel = UILabel()
-        titleLabel.numberOfLines = 3
+        titleLabel.numberOfLines = lines
         titleLabel.attributedText = title
         
         return titleLabel
     }
-
+    
+    /*
+     *  showNetworkErrorMessage()
+     *  Displays a simple error alert if no data was returned.
+     */
+    func showNetworkErrorMessage() {
+        let errorAlert : UIAlertController = UIAlertController(title: "Uh oh!", message: "Sorry, something went wrong. We're working on fixing the problem. Until then, email us at njit.events.app@gmail.com with feedback!", preferredStyle: UIAlertControllerStyle.Alert)
+        errorAlert.addAction(UIAlertAction(title: "OK", style: UIAlertActionStyle.Cancel, handler: { (action : UIAlertAction) -> Void in
+            
+        }))
+        self.presentViewController(errorAlert, animated: true, completion: { () -> Void in
+            
+        })
+    }
+    
+    /*
+     *  resizeImage()
+     *  Returns a resized image.
+     */
+    func resizeImage(oldImage : UIImage, newSize : CGSize) -> UIImage {
+        UIGraphicsBeginImageContext(newSize)
+        oldImage.drawInRect(CGRectMake(0, 0, newSize.width, newSize.height))
+        let newImage : UIImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return newImage
+    }
+    
 }
 

@@ -11,15 +11,24 @@ import SwiftyJSON
 
 class API {
     
-    func getData(completion : (swiftyJSON : JSON) -> Void) {
+    func getData(completion : (success : Bool, swiftyJSON : JSON) -> Void) {
         
-        Alamofire.request(.GET, "http://eventsatnjit.jayravaliya.com/api/v0.2/events").responseJSON { (request, response, data) -> Void in
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+        
+        let parameters : [String : String] = [
+            "device" : "iOS",
+            "userid" : UIDevice.currentDevice().identifierForVendor!.UUIDString
+        ]
+        
+        Alamofire.request(Method.POST, "http://eventsatnjit.jayravaliya.com/api/v0.2/events", parameters: parameters, encoding: ParameterEncoding.JSON, headers: nil).responseJSON { (request, response, result) -> Void in
             
-            if data.isSuccess {
-                completion(swiftyJSON: JSON(data.value!))
+            UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+            
+            if result.isSuccess {
+                completion(success: true, swiftyJSON: JSON(result.value!))
             }
             else {
-                completion(swiftyJSON: "Error")
+                completion(success: false, swiftyJSON: nil)
             }
         }
     }
