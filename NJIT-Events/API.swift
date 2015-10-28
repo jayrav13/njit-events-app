@@ -13,7 +13,7 @@ class API {
     
     func getData(completion : (swiftyJSON : JSON) -> Void) {
         
-        Alamofire.request(.GET, "http://njiteventsapp.jayravaliya.com/api/v0.1/events").responseJSON { (request, response, data) -> Void in
+        Alamofire.request(.GET, "http://eventsatnjit.jayravaliya.com/api/v0.2/events").responseJSON { (request, response, data) -> Void in
             
             if data.isSuccess {
                 completion(swiftyJSON: JSON(data.value!))
@@ -21,9 +21,6 @@ class API {
             else {
                 completion(swiftyJSON: "Error")
             }
-            
-            
-            
         }
     }
 }
